@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management System</title>
+    <link rel="stylesheet" href="sweetalert2.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      body {
+          background-color: #f4f4f4;
+          color: black;
+          font-family: Arial, sans-serif;
+          padding: 20px;
+      }
+      h1 {
+          text-align: center;
+          margin-bottom: 20px;
+      }
+      #themeButton {
+          float: right;
+          margin-bottom: 20px;
+      }
+      .btn {
+          margin: 5px;
+      }
+      #display, #display1 {
+          font-style: oblique;
+          font-size: 20px;
+          margin: 20px 0;
+          padding: 10px;
+          border: 1px solid lightgray; 
+          border-radius: 5px;
+          box-shadow: 0 2px 5px lightgray; 
+      }
+      #progress-bar-container {
+          margin-top: 20px;
+          width: 100%;
+          background-color: lightgray;
+          border-radius: 10px; 
+          overflow: hidden;
+      }
+      #progress-bar {
+          width: 0%;
+          height: 30px;
+          background-color: green;
+          color: white;
+          text-align: center;
+          line-height: 30px; 
+          transition: width 0.5s ease; 
+      }
+    </style>
+</head>
+<body>
+    <h1>Task Management System</h1>
+    <button type="button" class="btn btn-primary" onclick="mode()" id="themeButton">Dark mode</button>
+    <h2>Your name: <span id="name"></span></h2>
+    <button type="button" class="btn btn-primary" onclick="createTask()">Create a Task</button>
+    <button type="button" class="btn btn-primary" onclick="deleteTask()">Delete a Task</button>
+    <button type="button" class="btn btn-primary" onclick="updateTask()">update a Task</button>
+    <p id="display"></p>
+    <button type="button" class="btn btn-primary" onclick="completeTask()">Mark as complete</button><br><br>
+    <div class="btn-group" role="group" aria-label="Task Status">
+        <button type="button" class="btn btn-primary" onclick="displayPT()">Pending</button>
+        <button type="button" class="btn btn-primary" onclick="displayCT()">Completed</button>
+    </div>
+    <p id="display1"></p>
+    <div id="progress-bar-container">
+        <div id="progress-bar">0%</div>
+    </div>
+
+    <script>
+      let tasks = [];
+      let pendingTasks = [];
+      let completedTasks = [];
+
+      (async () => {
+          const { value: name } = await Swal.fire({
+              title: "Enter your name",
+              input: "text",
+              inputPlaceholder: "Enter your name",
+              inputAttributes: {
+                  maxlength: "10",
+                  autocapitalize: "off",
+                  autocorrect: "off"
+              }
+          });
+          if (name) {
+              document.getElementById("name").textContent = name;
+          }
+      })();
+
+      async function createTask() {
+          const { value: task } = await Swal.fire({
+              title: "Enter the task",
+              input: "text",
+              inputPlaceholder: "Enter the task",
+              inputAttributes: {
+                  maxlength: "10",
+                  autocapitalize: "off",
+                  autocorrect: "off"
+              }
+          });
+          if (task) {
+              tasks.push(task);
+              pendingTasks.push(task);
+              displayTasks();
+              updateProgressBar();
+          }
+      }
+
+      async function deleteTask() {
+          const { value: task } = await Swal.fire({
+              title: "Enter the task to delete",
+              input: "text",
+              inputPlaceholder: "Enter the task to delete",
+              inputAttributes: {
+                  maxlength: "10",
+                  autocapitalize: "off",
+                  autocorrect: "off"
+              }
+          });
+          if (task) {
+              let taskIndex = tasks.indexOf(task);
+              if (taskIndex > -1) {
+                  tasks.splice(taskIndex, 1);
+              }
+              
+              let pendingTaskIndex = pendingTasks.indexOf(task);
+              if (pendingTaskIndex > -1) {
+                  pendingTasks.splice(pendingTaskIndex, 1);
+              }
+              
+              let completedTaskIndex = completedTasks.indexOf(task);
+              if (completedTaskIndex > -1) {
+                  completedTasks.splice(completedTaskIndex, 1);
+              }
+
+              displayTasks();
+              updateProgressBar();
+          }
+      }
+
+      async function updateTask() {
+    const { value: oldTask } = await Swal.fire({
+        title: "Select the task you want to update",
+        input: "select",
+        inputOptions: pendingTasks.reduce((acc, task, index) => {
+            acc[index] = task;
+            return acc;
+        }, {}),
+        inputPlaceholder: "Select a task",
+        showCancelButton: true,
+    });
+
+    if (oldTask !== undefined) {
+        const { value: newTask } = await Swal.fire({
+            title: "Enter the updated task",
+            input: "text",
+            inputPlaceholder: "Enter the updated task",
+            inputAttributes: {
+                maxlength: "10",
+                autocapitalize: "off",
+                autocorrect: "off"
+            }
+        });
+
+        if (newTask) {
+            let taskIndex = pendingTasks.indexOf(pendingTasks[oldTask]);
+            if (taskIndex > -1) {
+                tasks[tasks.indexOf(pendingTasks[taskIndex])] = newTask;
+                pendingTasks[taskIndex] = newTask;
+                displayTasks();
+                displayPT();
+            }
+        }
+    }
+}
+
+      async function completeTask() {
+    const { value: task } = await Swal.fire({
+        title: "Enter the task you completed",
+        input: "text",
+        inputPlaceholder: "Enter the task you completed",
+        inputAttributes: {
+            maxlength: "10",
+            autocapitalize: "off",
+            autocorrect: "off"
+        }
+    });
+    if (task) {
+        let taskIndex = pendingTasks.indexOf(task);
+        if (taskIndex > -1) {
+            pendingTasks.splice(taskIndex, 1);
+        }
+        taskIndex = tasks.indexOf(task);
+        if (taskIndex > -1) {
+            tasks.splice(taskIndex, 1);
+        }
+        completedTasks.push(task);
+        displayTasks();
+        updateProgressBar()
+    }
+}
+
+      function displayTasks() {
+          document.getElementById("display").innerHTML = tasks.join("<br>");
+      }
+
+      function displayPT() {
+          document.getElementById("display1").innerHTML = pendingTasks.join("<br>");
+      }
+
+      function displayCT() {
+          document.getElementById("display1").innerHTML = completedTasks.join("<br>");
+      }
+
+      function mode() {
+          const color = document.body.style.backgroundColor;
+          if (color === "rgb(46, 49, 53)" || color === "#2E3135") {
+              document.body.style.backgroundColor = "white";
+              document.body.style.color = "black";
+              document.getElementById("themeButton").innerHTML = "Dark mode";
+          } else {
+              document.body.style.backgroundColor = "#2E3135";
+              document.body.style.color = "white";
+              document.getElementById("themeButton").innerHTML = "Light mode";
+          }
+      }
+
+      function updateProgressBar() {
+          let totalTasks = pendingTasks.length + completedTasks.length;
+          let completedTasksCount = completedTasks.length;
+          let progress = totalTasks === 0 ? 0 : (completedTasksCount / totalTasks) * 100;
+          document.getElementById("progress-bar").style.width = progress + "%";
+          document.getElementById("progress-bar").textContent = Math.round(progress) + "%";
+      }
+    </script>
+</body>
+</html>
